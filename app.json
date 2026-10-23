@@ -1,0 +1,49 @@
+{
+  "expo": {
+    "name": "Remindly",
+    "slug": "remindly",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "remindly",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "plugins": [
+      "expo-router",
+      "expo-sqlite",
+      "expo-background-task",
+      [
+        "expo-notifications",
+        {
+          "defaultChannel": "remindly-reminders",
+          "enableRemoteNotifications": false
+        }
+      ],
+      "@react-native-community/datetimepicker",
+      "expo-font",
+      "expo-system-ui"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.remindly.app",
+      "permissions": [
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.SCHEDULE_EXACT_ALARM"
+      ],
+      "adaptiveIcon": {
+        "backgroundColor": "#E1ECE4",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": true
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
