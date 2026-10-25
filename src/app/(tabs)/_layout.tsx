@@ -8,12 +8,12 @@ export default function TabLayout() {
   return <Tabs backBehavior="history" screenOptions={({ route }) => ({
     headerShown: false,
     freezeOnBlur: true,
-    animation: 'none',
+    animation: 'shift',
     tabBarActiveTintColor: colors.primary,
     tabBarInactiveTintColor: colors.muted,
     tabBarStyle: { backgroundColor: colors.tab, borderTopColor: colors.border, height: 62, paddingTop: 7, paddingBottom: 5 },
     tabBarLabelStyle: { fontSize: 10, fontWeight: '600' },
-    tabBarIcon: ({ color, size, focused }) => {
+    tabBarIcon: ({ size, focused }) => {
       const icons: Record<string, [keyof typeof Ionicons.glyphMap, keyof typeof Ionicons.glyphMap]> = {
         today: ['today-outline', 'today'], habits: ['flame-outline', 'flame'], tasks: ['checkbox-outline', 'checkbox'], settings: ['settings-outline', 'settings'],
       };

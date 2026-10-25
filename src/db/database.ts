@@ -20,7 +20,9 @@ export async function database(): Promise<SQLite.SQLiteDatabase> {
           due_date TEXT,
           created_at TEXT NOT NULL,
           archived INTEGER NOT NULL DEFAULT 0,
-          updated_at TEXT NOT NULL
+          updated_at TEXT NOT NULL,
+          nag_enabled INTEGER NOT NULL DEFAULT 0,
+          nag_interval_minutes INTEGER DEFAULT 30
         );
         CREATE TABLE IF NOT EXISTS completions (
           item_id TEXT NOT NULL,
@@ -35,6 +37,11 @@ export async function database(): Promise<SQLite.SQLiteDatabase> {
           value TEXT NOT NULL
         );
       `);
+
+      // Migration for existing tables created before per-task nag columns
+      try { await db.execAsync('ALTER TABLE items ADD COLUMN nag_enabled INTEGER NOT NULL DEFAULT 0;'); } catch { /* column exists */ }
+      try { await db.execAsync('ALTER TABLE items ADD COLUMN nag_interval_minutes INTEGER DEFAULT 30;'); } catch { /* column exists */ }
+
       return db;
     })();
   }
@@ -55,6 +62,8 @@ function toItem(row: Record<string, unknown>): ReminderItem {
     dueDate: row.due_date ? String(row.due_date) : null,
     createdAt: String(row.created_at),
     archived: Number(row.archived) === 1,
+    nagEnabled: Number(row.nag_enabled) === 1,
+    nagIntervalMinutes: row.nag_interval_minutes != null ? Number(row.nag_interval_minutes) : null,
   };
 }
 
@@ -83,13 +92,13 @@ export async function saveItem(item: ReminderItem): Promise<void> {
   const db = await database();
   const now = new Date().toISOString();
   await db.runAsync(
-    `INSERT INTO items (id, title, notes, kind, reminder_times, due_date, created_at, archived, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `INSERT INTO items (id, title, notes, kind, reminder_times, due_date, created_at, archived, updated_at, nag_enabled, nag_interval_minutes)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      ON CONFLICT(id) DO UPDATE SET title=excluded.title, notes=excluded.notes, kind=excluded.kind,
        reminder_times=excluded.reminder_times, due_date=excluded.due_date, archived=excluded.archived,
-       updated_at=excluded.updated_at`,
+       updated_at=excluded.updated_at, nag_enabled=excluded.nag_enabled, nag_interval_minutes=excluded.nag_interval_minutes`,
     item.id, item.title.trim(), item.notes, item.kind, JSON.stringify(item.reminderTimes), item.dueDate,
-    item.createdAt || now, item.archived ? 1 : 0, now,
+    item.createdAt || now, item.archived ? 1 : 0, now, item.nagEnabled ? 1 : 0, item.nagIntervalMinutes ?? null,
   );
 }
 
@@ -136,9 +145,9 @@ export async function restoreBackup(backup: BackupData): Promise<void> {
     await db.runAsync('DELETE FROM app_settings');
     for (const item of backup.items) {
       await db.runAsync(
-        'INSERT INTO items (id, title, notes, kind, reminder_times, due_date, created_at, archived, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        'INSERT INTO items (id, title, notes, kind, reminder_times, due_date, created_at, archived, updated_at, nag_enabled, nag_interval_minutes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         item.id, item.title, item.notes ?? '', item.kind, JSON.stringify(item.reminderTimes), item.dueDate,
-        item.createdAt, item.archived ? 1 : 0, new Date().toISOString(),
+        item.createdAt, item.archived ? 1 : 0, new Date().toISOString(), item.nagEnabled ? 1 : 0, item.nagIntervalMinutes ?? null,
       );
     }
     for (const [itemId, dates] of Object.entries(backup.completions)) {

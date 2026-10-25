@@ -69,7 +69,7 @@ export function ChoiceChip({ title, selected, onPress }: { title: string; select
 
 export function EmptyState({ title, body, action }: { title: string; body: string; action?: React.ReactNode }) {
   const colors = usePalette();
-  return <Card style={styles.empty}><View style={[styles.emptyIcon, { backgroundColor: colors.primarySoft }]}><Ionicons name="leaf-outline" size={23} color={colors.primary} /></View><Text style={[styles.emptyTitle, { color: colors.text }]}>{title}</Text><Text style={[styles.emptyBody, { color: colors.muted }]}>{body}</Text>{action}</Card>;
+  return <Card style={styles.empty}><View style={[styles.emptyIcon, { backgroundColor: colors.primarySoft }]}><Ionicons name="notifications-outline" size={24} color={colors.primary} /></View><Text style={[styles.emptyTitle, { color: colors.text }]}>{title}</Text><Text style={[styles.emptyBody, { color: colors.muted }]}>{body}</Text>{action}</Card>;
 }
 
 export const ReminderRow = React.memo(function ReminderRow({ item, completed = false, overdue = false, onToggle, onOpen }: {

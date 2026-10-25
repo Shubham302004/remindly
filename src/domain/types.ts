@@ -9,6 +9,8 @@ export interface ReminderItem {
   dueDate: string | null;
   createdAt: string;
   archived: boolean;
+  nagEnabled?: boolean;
+  nagIntervalMinutes?: number | null;
 }
 
 export interface QuietHours {

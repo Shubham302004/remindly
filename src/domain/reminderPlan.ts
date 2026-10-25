@@ -26,8 +26,12 @@ interface ReminderPlanOptions {
 }
 
 function formatItemMessage(items: ReminderItem[], overdueIds: Set<string>): string {
+  if (items.length === 1) {
+    return overdueIds.has(items[0].id)
+      ? `${items[0].title} is overdue. Time to take care of it.`
+      : `Time for ${items[0].title}.`;
+  }
   const labels = items.map((item) => overdueIds.has(item.id) ? `${item.title} (overdue)` : item.title);
-  if (labels.length === 1) return overdueIds.has(items[0].id) ? `${labels[0]} is overdue. Time to take care of it.` : `Time for ${labels[0]}.`;
   const visible = labels.slice(0, 3).join(', ');
   const more = labels.length > 3 ? `, and ${labels.length - 3} more` : '';
   return `A reminder for ${visible}${more}.`;
@@ -50,16 +54,21 @@ export function buildReminderPlan({
   const byInstant = new Map<number, Map<string, ReminderItem>>();
   const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
   let day = dayStart;
-  const intervalMs = Math.max(0, settings.nagIntervalMinutes) * 60 * 1000;
 
   while (day.getTime() <= horizonEnd.getTime()) {
     const dayKey = localDateKey(day);
     const dayEnd = new Date(day.getFullYear(), day.getMonth(), day.getDate() + 1, 0, 0, 0, 0);
     for (const item of items) {
       if (item.archived || item.reminderTimes.length === 0) continue;
+      // Do not schedule reminders for tasks whose due date is in the future
+      if (item.dueDate && item.dueDate > dayKey) continue;
       const doneDates = completions[item.id] ?? [];
       if (isCompletedForDay(item, dayKey, doneDates)) continue;
       const itemTimes = new Set<number>();
+
+      // Per-item nag interval configuration
+      const taskNagMinutes = item.nagEnabled ? (item.nagIntervalMinutes ?? settings.nagIntervalMinutes ?? 30) : 0;
+      const intervalMs = Math.max(0, taskNagMinutes) * 60 * 1000;
 
       for (const reminderTime of item.reminderTimes) {
         let fire = dateAtTime(day, reminderTime);

@@ -1,10 +1,14 @@
-import React, { useMemo, useState } from 'react';
-import { View } from 'react-native';
+import React, { useCallback, useMemo, useState } from 'react';
+import { LayoutAnimation, Platform, UIManager, View } from 'react-native';
 import { router } from 'expo-router';
 import { AppScreen, Button, Card, ChoiceChip, EmptyState, PageHeading, ReminderRow } from '../../components/ui';
 import { useApp } from '../../context/AppContext';
 import { localDateKey } from '../../domain/dates';
 import type { ReminderItem } from '../../domain/types';
+
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 type Filter = 'Pending' | 'Overdue' | 'Completed';
 
@@ -23,15 +27,25 @@ export default function TasksScreen() {
     return !isCompleted && !isOverdue;
   });
 
+  const selectFilter = useCallback((next: Filter) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setFilter(next);
+  }, []);
+
+  const handleToggle = useCallback((itemId: string, completed: boolean) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    void markDone(itemId, completed);
+  }, [markDone]);
+
   return <AppScreen>
     <PageHeading title="Tasks" subtitle="Keep one-off and daily tasks in view." action={<Button title="Add" icon="add" compact onPress={() => router.push({ pathname: '/item/new', params: { kind: 'daily' } })} />} />
     <View style={{ flexDirection: 'row', gap: 8 }}>
-      {(['Pending', 'Overdue', 'Completed'] as Filter[]).map((value) => <ChoiceChip key={value} title={value} selected={filter === value} onPress={() => setFilter(value)} />)}
+      {(['Pending', 'Overdue', 'Completed'] as Filter[]).map((value) => <ChoiceChip key={value} title={value} selected={filter === value} onPress={() => selectFilter(value)} />)}
     </View>
     {filtered.length === 0 ? <EmptyState title={filter === 'Completed' ? 'Nothing completed yet' : filter === 'Overdue' ? 'No overdue tasks' : 'All clear for now'} body={filter === 'Pending' ? 'Add a daily or permanent task and choose when you want a reminder.' : 'Items in this view will show up here when they match.'} action={filter === 'Pending' ? <Button title="Add a task" icon="add" onPress={() => router.push({ pathname: '/item/new', params: { kind: 'daily' } })} /> : undefined} /> : <Card style={{ paddingVertical: 2, paddingHorizontal: 12 }}>
       {filtered.map((item: ReminderItem) => {
         const completed = item.kind === 'permanent' ? (completions[item.id] ?? []).length > 0 : completedToday.has(item.id);
-        return <ReminderRow key={item.id} item={item} completed={completed} overdue={!completed && Boolean(item.dueDate && item.dueDate < today)} onToggle={() => void markDone(item.id, !completed)} onOpen={() => router.push(`/item/${item.id}`)} />;
+        return <ReminderRow key={item.id} item={item} completed={completed} overdue={!completed && Boolean(item.dueDate && item.dueDate < today)} onToggle={() => handleToggle(item.id, !completed)} onOpen={() => router.push(`/item/${item.id}`)} />;
       })}
     </Card>}
     {filter === 'Pending' && filtered.length > 0 ? <View><Button title="Add another task" tone="secondary" icon="add" onPress={() => router.push({ pathname: '/item/new', params: { kind: 'daily' } })} /></View> : null}

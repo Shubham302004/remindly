@@ -56,7 +56,7 @@ export default function OnboardingScreen() {
   const finish = async () => { await updateSettings({ onboardingComplete: true }); router.replace('/(tabs)/today'); };
 
   return <AppScreen>
-    <View style={{ alignItems: 'center', marginTop: 20, marginBottom: 4 }}><View style={{ width: 66, height: 66, borderRadius: 22, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="leaf" size={30} color={colors.primary} /></View></View>
+    <View style={{ alignItems: 'center', marginTop: 20, marginBottom: 4 }}><View style={{ width: 66, height: 66, borderRadius: 22, backgroundColor: colors.primarySoft, alignItems: 'center', justifyContent: 'center' }}><Ionicons name="notifications" size={32} color={colors.primary} /></View></View>
     <PageHeading title="Let reminders reach you" subtitle="A quick setup helps Remindly stay dependable, even when the app is closed." />
     <Card>
       <PermissionStep title="Allow notifications" detail="Remindly uses on-device notifications only. It never sends your reminders to a server." done={permissions.notifications} onPress={() => void allowReminders()} button={permissions.notifications ? 'Allowed' : 'Allow notifications'} working={working} />
