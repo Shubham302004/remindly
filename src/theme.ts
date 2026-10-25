@@ -1,14 +1,7 @@
-import { useColorScheme } from 'react-native';
-
-const light = {
-  background: '#F4F6F1', surface: '#FFFFFF', surfaceAlt: '#EAEFE8', text: '#202820', muted: '#6F7B71',
-  border: '#E1E7DE', primary: '#527A67', primarySoft: '#E1ECE4', accent: '#D6A05B', danger: '#B5564B',
-  dangerSoft: '#F7E6E3', success: '#4D8063', shadow: '#1F3628', tab: '#FFFFFF',
-};
 const dark = {
-  background: '#141A16', surface: '#1D2520', surfaceAlt: '#26312A', text: '#EFF4EF', muted: '#A8B5AA',
-  border: '#344239', primary: '#9CC5A8', primarySoft: '#273B2F', accent: '#E0B16F', danger: '#E1978E',
-  dangerSoft: '#422C29', success: '#9CC5A8', shadow: '#000000', tab: '#1D2520',
+  background: '#0B0F17', surface: '#121A26', surfaceAlt: '#1B2635', text: '#F2F5FF', muted: '#9AA7BD',
+  border: '#2A3648', primary: '#A78BFA', primarySoft: '#28213D', accent: '#54D9C6', danger: '#FF7A90',
+  dangerSoft: '#3C2631', success: '#5BD6A8', shadow: '#000000', tab: '#101722',
 };
-export type Palette = typeof light;
-export function usePalette(): Palette { return useColorScheme() === 'dark' ? dark : light; }
+export type Palette = typeof dark;
+export function usePalette(): Palette { return dark; }

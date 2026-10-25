@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildReminderPlan, MAX_SCHEDULED_NOTIFICATIONS } from '../src/domain/reminderPlan';
+import { formatTimeDisplay } from '../src/domain/dates';
 import { DEFAULT_SETTINGS } from '../src/domain/types';
 import type { ReminderItem } from '../src/domain/types';
 
@@ -9,6 +10,13 @@ const item = (overrides: Partial<ReminderItem> = {}): ReminderItem => ({
   createdAt: '2026-10-01T00:00:00.000Z', archived: false, ...overrides,
 });
 const baseSettings = { ...DEFAULT_SETTINGS, nagIntervalMinutes: 30, quietHours: { enabled: false, start: '22:00', end: '07:00' } };
+
+test('formats stored times as 12-hour AM/PM labels', () => {
+  assert.equal(formatTimeDisplay('00:05'), '12:05 AM');
+  assert.equal(formatTimeDisplay('12:00'), '12:00 PM');
+  assert.equal(formatTimeDisplay('14:30'), '2:30 PM');
+  assert.equal(formatTimeDisplay('invalid'), 'invalid');
+});
 
  test('schedules each reminder time and repeats until the local day ends', () => {
   const plan = buildReminderPlan({ items: [item()], completions: {}, settings: baseSettings, now: new Date(2026, 9, 23, 7, 59), horizonHours: 1 });
@@ -22,6 +30,18 @@ const baseSettings = { ...DEFAULT_SETTINGS, nagIntervalMinutes: 30, quietHours: 
 test('does not schedule a completed habit again for that date', () => {
   const plan = buildReminderPlan({ items: [item()], completions: { water: ['2026-10-23'] }, settings: baseSettings, now: new Date(2026, 9, 23, 7, 0) });
   assert.equal(plan.notifications.length, 0);
+});
+
+test('nag interval Off schedules only the chosen reminder times', () => {
+  const plan = buildReminderPlan({
+    items: [item()],
+    completions: {},
+    settings: { ...baseSettings, nagIntervalMinutes: 0 },
+    now: new Date(2026, 9, 23, 7, 59),
+    horizonHours: 8,
+  });
+  const times = plan.notifications.map((entry) => `${String(entry.fireDate.getHours()).padStart(2, '0')}:${String(entry.fireDate.getMinutes()).padStart(2, '0')}`);
+  assert.deepEqual(times, ['08:00', '13:00']);
 });
 
 test('an overdue permanent task remains scheduled and says overdue', () => {

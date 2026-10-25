@@ -50,7 +50,7 @@ export function buildReminderPlan({
   const byInstant = new Map<number, Map<string, ReminderItem>>();
   const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
   let day = dayStart;
-  const intervalMs = Math.max(1, settings.nagIntervalMinutes) * 60 * 1000;
+  const intervalMs = Math.max(0, settings.nagIntervalMinutes) * 60 * 1000;
 
   while (day.getTime() <= horizonEnd.getTime()) {
     const dayKey = localDateKey(day);
@@ -64,6 +64,7 @@ export function buildReminderPlan({
       for (const reminderTime of item.reminderTimes) {
         let fire = dateAtTime(day, reminderTime);
         if (fire.getTime() < now.getTime() + 2_000) {
+          if (intervalMs === 0) continue;
           const elapsed = now.getTime() - fire.getTime();
           const steps = Math.floor(elapsed / intervalMs) + 1;
           fire = new Date(fire.getTime() + steps * intervalMs);
@@ -80,6 +81,7 @@ export function buildReminderPlan({
               group.set(item.id, item);
             }
           }
+          if (intervalMs === 0) break;
           fire = new Date(fire.getTime() + intervalMs);
         }
       }

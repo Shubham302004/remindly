@@ -24,7 +24,7 @@ function NavigationShell() {
     void Notifications.getLastNotificationResponseAsync().then((response) => { if (response) openTarget(response); });
     return () => { disposed = true; subscription.remove(); };
   }, [router, ready, onboardingComplete]);
-  return <><StatusBar style={colors.background === '#141A16' ? 'light' : 'dark'} /><Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
+  return <><StatusBar style="light" /><Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
     <Stack.Screen name="index" />
     <Stack.Screen name="onboarding" />
     <Stack.Screen name="(tabs)" />

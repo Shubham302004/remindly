@@ -28,6 +28,14 @@ export function formatTime(date: Date): string {
   return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
 }
 
+export function formatTimeDisplay(value: string): string {
+  if (!isValidTime(value)) return value;
+  const [hours, minutes] = value.split(':').map(Number);
+  const displayHour = hours % 12 || 12;
+  const period = hours < 12 ? 'AM' : 'PM';
+  return `${displayHour}:${String(minutes).padStart(2, '0')} ${period}`;
+}
+
 export function isWithinQuietHours(date: Date, start: string, end: string): boolean {
   const current = date.getHours() * 60 + date.getMinutes();
   const startMinute = minutesOfDay(start);

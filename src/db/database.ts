@@ -67,7 +67,7 @@ export async function getSnapshot(): Promise<AppSnapshot> {
   for (const row of settingRows) {
     try {
       const value: unknown = JSON.parse(row.value);
-      if (row.key === 'nagIntervalMinutes' && typeof value === 'number' && value > 0) settings.nagIntervalMinutes = value;
+      if (row.key === 'nagIntervalMinutes' && typeof value === 'number' && value >= 0) settings.nagIntervalMinutes = value;
       if (row.key === 'quietHours' && value && typeof value === 'object') settings.quietHours = { ...settings.quietHours, ...(value as AppSettings['quietHours']) };
       if (row.key === 'onboardingComplete' && typeof value === 'boolean') settings.onboardingComplete = value;
     } catch {
@@ -104,9 +104,9 @@ export async function setCompletion(itemId: string, dateKey: string, completed: 
   }
 }
 
-export async function archiveItem(itemId: string): Promise<void> {
+export async function deleteItem(itemId: string): Promise<void> {
   const db = await database();
-  await db.runAsync('UPDATE items SET archived = 1, updated_at = ? WHERE id = ?', new Date().toISOString(), itemId);
+  await db.runAsync('DELETE FROM items WHERE id = ?', itemId);
 }
 
 export async function saveSettings(settings: AppSettings): Promise<void> {

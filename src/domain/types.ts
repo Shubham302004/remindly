@@ -18,6 +18,7 @@ export interface QuietHours {
 }
 
 export interface AppSettings {
+  /** Zero disables repeat nudges while retaining the selected reminder times. */
   nagIntervalMinutes: number;
   quietHours: QuietHours;
   onboardingComplete: boolean;

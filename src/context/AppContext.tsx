@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { AppState } from 'react-native';
-import { archiveItem as archiveItemInDb, getSnapshot, initializeDatabase, restoreBackup, saveItem as saveItemInDb, saveSettings as saveSettingsInDb, setCompletion as setCompletionInDb } from '../db/database';
+import { deleteItem as deleteItemInDb, getSnapshot, initializeDatabase, restoreBackup, saveItem as saveItemInDb, saveSettings as saveSettingsInDb, setCompletion as setCompletionInDb } from '../db/database';
 import { localDateKey } from '../domain/dates';
 import type { AppSettings, AppSnapshot, BackupData, ReminderItem } from '../domain/types';
 import { DEFAULT_SETTINGS } from '../domain/types';
@@ -10,7 +10,7 @@ import { ensureNotificationChannel, rescheduleReminders } from '../services/noti
 interface AppContextValue extends AppSnapshot {
   ready: boolean;
   saveItem: (item: ReminderItem) => Promise<void>;
-  archiveItem: (id: string) => Promise<void>;
+  deleteItem: (id: string) => Promise<void>;
   markDone: (id: string, completed: boolean) => Promise<void>;
   updateSettings: (patch: Partial<AppSettings>) => Promise<void>;
   importBackup: (backup: BackupData) => Promise<void>;
@@ -63,8 +63,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await synchronize();
   }, [synchronize]);
 
-  const archive = useCallback(async (id: string) => {
-    await archiveItemInDb(id);
+  const deleteItem = useCallback(async (id: string) => {
+    await deleteItemInDb(id);
     await synchronize();
   }, [synchronize]);
 
@@ -86,8 +86,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await synchronize();
   }, [synchronize]);
 
-  const value = useMemo<AppContextValue>(() => ({ ...snapshot, ready, saveItem, archiveItem: archive, markDone, updateSettings, importBackup, reload }),
-    [snapshot, ready, saveItem, archive, markDone, updateSettings, importBackup, reload]);
+  const value = useMemo<AppContextValue>(() => ({ ...snapshot, ready, saveItem, deleteItem, markDone, updateSettings, importBackup, reload }),
+    [snapshot, ready, saveItem, deleteItem, markDone, updateSettings, importBackup, reload]);
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
 

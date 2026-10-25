@@ -8,7 +8,7 @@ import * as IntentLauncher from 'expo-intent-launcher';
 import { AppScreen, Button, Card, ChoiceChip, FieldLabel, PageHeading } from '../../components/ui';
 import { useApp } from '../../context/AppContext';
 import { createBackup, isBackupData } from '../../db/database';
-import { formatTime } from '../../domain/dates';
+import { formatTime, formatTimeDisplay } from '../../domain/dates';
 import { getLastScheduleReport, getReminderPermissionStatus, requestExactAlarmPermission, requestNotificationPermission, scheduleTestNotification } from '../../services/notifications';
 import { usePalette } from '../../theme';
 
@@ -35,7 +35,7 @@ export default function SettingsScreen() {
   }, [refresh]);
 
   const setNagInterval = async (minutes: number) => {
-    if (!Number.isFinite(minutes) || minutes < 1 || minutes > 720) { Alert.alert('Invalid interval', 'Choose between 1 and 720 minutes.'); return; }
+    if (!Number.isFinite(minutes) || minutes < 0 || minutes > 720) { Alert.alert('Invalid interval', 'Choose Off or an interval from 1 to 720 minutes.'); return; }
     await updateSettings({ nagIntervalMinutes: Math.round(minutes) });
   };
 
@@ -84,13 +84,13 @@ export default function SettingsScreen() {
     <PageHeading title="Settings" subtitle="Shape reminders around your day." />
     <Card>
       <FieldLabel hint="If an item is still pending, Remindly repeats a nudge at this interval until the day ends.">Nag interval</FieldLabel>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>{PRESETS.map((value) => <ChoiceChip key={value} title={`${value} min`} selected={settings.nagIntervalMinutes === value} onPress={() => void setNagInterval(value)} />)}<ChoiceChip title="Custom" selected={!PRESETS.includes(settings.nagIntervalMinutes)} onPress={() => { setCustomValue(String(settings.nagIntervalMinutes)); setCustomOpen(true); }} /></View>
-      <Text style={{ color: colors.muted, fontSize: 12 }}>Current: every {settings.nagIntervalMinutes} minutes</Text>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}><ChoiceChip title="Off" selected={settings.nagIntervalMinutes === 0} onPress={() => void setNagInterval(0)} />{PRESETS.map((value) => <ChoiceChip key={value} title={`${value} min`} selected={settings.nagIntervalMinutes === value} onPress={() => void setNagInterval(value)} />)}<ChoiceChip title="Custom" selected={settings.nagIntervalMinutes > 0 && !PRESETS.includes(settings.nagIntervalMinutes)} onPress={() => { setCustomValue(String(settings.nagIntervalMinutes || 30)); setCustomOpen(true); }} /></View>
+      <Text style={{ color: colors.muted, fontSize: 12 }}>Current: {settings.nagIntervalMinutes === 0 ? 'Off' : `every ${settings.nagIntervalMinutes} minutes`}</Text>
     </Card>
     <Card>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}><View style={{ flex: 1, paddingRight: 12 }}><Text style={{ color: colors.text, fontSize: 15, fontWeight: '700' }}>Quiet hours</Text><Text style={{ color: colors.muted, fontSize: 12, marginTop: 4 }}>No reminders or nags are scheduled during this window.</Text></View><Pressable accessibilityRole="switch" accessibilityState={{ checked: settings.quietHours.enabled }} onPress={() => void updateSettings({ quietHours: { ...settings.quietHours, enabled: !settings.quietHours.enabled } })} style={{ width: 48, height: 28, borderRadius: 20, padding: 3, backgroundColor: settings.quietHours.enabled ? colors.primary : colors.border, justifyContent: 'center' }}><View style={{ width: 22, height: 22, borderRadius: 12, backgroundColor: '#fff', alignSelf: settings.quietHours.enabled ? 'flex-end' : 'flex-start' }} /></Pressable></View>
       {settings.quietHours.enabled ? <View style={{ flexDirection: 'row', gap: 10 }}>
-        {(['start', 'end'] as const).map((key) => <Pressable key={key} onPress={() => setPicker(key)} style={{ flex: 1, borderRadius: 13, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, padding: 12 }}><Text style={{ color: colors.muted, fontSize: 11 }}>{key === 'start' ? 'STARTS' : 'ENDS'}</Text><Text style={{ color: colors.text, fontSize: 16, fontWeight: '700', marginTop: 4 }}>{settings.quietHours[key]}</Text></Pressable>)}
+        {(['start', 'end'] as const).map((key) => <Pressable key={key} onPress={() => setPicker(key)} style={{ flex: 1, borderRadius: 13, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, padding: 12 }}><Text style={{ color: colors.muted, fontSize: 11 }}>{key === 'start' ? 'STARTS' : 'ENDS'}</Text><Text style={{ color: colors.text, fontSize: 16, fontWeight: '700', marginTop: 4 }}>{formatTimeDisplay(settings.quietHours[key])}</Text></Pressable>)}
       </View> : null}
     </Card>
     <Card>
@@ -111,9 +111,9 @@ export default function SettingsScreen() {
       <View style={{ flexDirection: 'row', gap: 8 }}><View style={{ flex: 1 }}><Button title={busy ? 'Working…' : 'Export JSON'} icon="download-outline" tone="secondary" disabled={busy} onPress={() => void doExport()} /></View><View style={{ flex: 1 }}><Button title="Import JSON" icon="folder-open-outline" tone="quiet" disabled={busy} onPress={() => void doImport()} /></View></View>
     </Card>
     <Text style={{ color: colors.muted, fontSize: 11, lineHeight: 16, textAlign: 'center' }}>Remindly works offline. No account or cloud service is used by the app.</Text>
-    {picker ? <DateTimePicker value={timeValue(picker)} mode="time" display="default" onChange={(_event, date) => {
+    {picker ? <DateTimePicker value={timeValue(picker)} mode="time" display="default" is24Hour={false} locale={Platform.OS === 'ios' ? 'en_US' : undefined} onChange={(_event, date) => {
       const key = picker; setPicker(null);
-      if (date) void updateSettings({ quietHours: { ...settings.quietHours, [key]: formatTime(date) } });
+      if (_event.type === 'set' && date) void updateSettings({ quietHours: { ...settings.quietHours, [key]: formatTime(date) } });
     }} /> : null}
     <Modal visible={customOpen} transparent animationType="fade" onRequestClose={() => setCustomOpen(false)}>
       <View style={{ flex: 1, backgroundColor: '#0008', alignItems: 'center', justifyContent: 'center', padding: 24 }}><Card style={{ width: '100%', maxWidth: 380 }}><Text style={{ color: colors.text, fontSize: 17, fontWeight: '800' }}>Custom nag interval</Text><Text style={{ color: colors.muted, fontSize: 13 }}>Enter a whole number of minutes, from 1 to 720.</Text><TextInput value={customValue} onChangeText={setCustomValue} keyboardType="number-pad" selectTextOnFocus style={{ borderWidth: 1, borderColor: colors.border, backgroundColor: colors.surface, color: colors.text, borderRadius: 13, padding: 13, fontSize: 17 }} /><View style={{ flexDirection: 'row', gap: 8 }}><View style={{ flex: 1 }}><Button title="Cancel" tone="quiet" onPress={() => setCustomOpen(false)} /></View><View style={{ flex: 1 }}><Button title="Save interval" onPress={() => { setCustomOpen(false); void setNagInterval(Number(customValue)); }} /></View></View></Card></View>

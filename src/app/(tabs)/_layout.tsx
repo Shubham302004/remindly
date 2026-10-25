@@ -5,8 +5,10 @@ import { usePalette } from '../../theme';
 
 export default function TabLayout() {
   const colors = usePalette();
-  return <Tabs screenOptions={({ route }) => ({
+  return <Tabs backBehavior="history" screenOptions={({ route }) => ({
     headerShown: false,
+    freezeOnBlur: true,
+    animation: 'none',
     tabBarActiveTintColor: colors.primary,
     tabBarInactiveTintColor: colors.muted,
     tabBarStyle: { backgroundColor: colors.tab, borderTopColor: colors.border, height: 62, paddingTop: 7, paddingBottom: 5 },

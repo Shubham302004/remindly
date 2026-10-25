@@ -27,8 +27,8 @@ export default function HabitsScreen() {
   const selectedDoneToday = selected ? completedSet.has(today) : false;
 
   return <AppScreen>
-    <PageHeading title="Habits" subtitle="Build a rhythm, one day at a time." action={<Button title="Add" icon="add" compact onPress={() => router.push('/item/new')} />} />
-    {habits.length === 0 ? <EmptyState title="Start a gentle routine" body="Add a daily habit and Remindly will keep your streak history here." action={<Button title="Add a habit" icon="add" onPress={() => router.push('/item/new')} />} /> : <>
+    <PageHeading title="Habits" subtitle="Build a rhythm, one day at a time." action={<Button title="Add" icon="add" compact onPress={() => router.push({ pathname: '/item/new', params: { kind: 'habit' } })} />} />
+    {habits.length === 0 ? <EmptyState title="Start a gentle routine" body="Add a daily habit and Remindly will keep your streak history here." action={<Button title="Add a habit" icon="add" onPress={() => router.push({ pathname: '/item/new', params: { kind: 'habit' } })} />} /> : <>
       <SectionHeading title="Your habits" count={habits.length} />
       <Card style={{ paddingVertical: 2, paddingHorizontal: 12 }}>
         {habits.map((habit: ReminderItem) => <View key={habit.id}>
@@ -39,7 +39,7 @@ export default function HabitsScreen() {
       {selected ? <>
         <SectionHeading title="Streak & history" />
         <Card>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}><View style={{ flex: 1 }}><Text style={{ color: colors.muted, fontSize: 12 }}>Selected habit</Text><Text numberOfLines={1} style={{ color: colors.text, fontSize: 17, fontWeight: '700', marginTop: 3 }}>{selected.title}</Text></View><Pressable accessibilityRole="button" accessibilityLabel="Mark selected habit done" onPress={() => void markDone(selected.id, !selectedDoneToday)} style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: selectedDoneToday ? colors.primary : colors.primarySoft, alignItems: 'center', justifyContent: 'center' }}><Ionicons name={selectedDoneToday ? 'checkmark' : 'checkmark-outline'} size={21} color={selectedDoneToday ? '#fff' : colors.primary} /></Pressable></View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}><View style={{ flex: 1 }}><Text style={{ color: colors.muted, fontSize: 12 }}>Selected habit</Text><Text numberOfLines={2} style={{ color: colors.text, fontSize: 17, fontWeight: '700', marginTop: 3 }}>{selected.title}</Text></View><Pressable accessibilityRole="button" accessibilityLabel="Mark selected habit done" onPress={() => void markDone(selected.id, !selectedDoneToday)} style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: selectedDoneToday ? colors.primary : colors.primarySoft, alignItems: 'center', justifyContent: 'center' }}><Ionicons name={selectedDoneToday ? 'checkmark' : 'checkmark-outline'} size={21} color={selectedDoneToday ? '#fff' : colors.primary} /></Pressable></View>
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <View style={{ flex: 1, padding: 14, borderRadius: 15, backgroundColor: colors.primarySoft }}><Text style={{ color: colors.muted, fontSize: 11 }}>CURRENT STREAK</Text><Text style={{ color: colors.text, fontSize: 25, fontWeight: '800', marginTop: 3 }}>{current}<Text style={{ fontSize: 13, fontWeight: '600' }}> days</Text></Text></View>
             <View style={{ flex: 1, padding: 14, borderRadius: 15, backgroundColor: colors.surfaceAlt }}><Text style={{ color: colors.muted, fontSize: 11 }}>BEST STREAK</Text><Text style={{ color: colors.text, fontSize: 25, fontWeight: '800', marginTop: 3 }}>{best}<Text style={{ fontSize: 13, fontWeight: '600' }}> days</Text></Text></View>

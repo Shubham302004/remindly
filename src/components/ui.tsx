@@ -1,14 +1,21 @@
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { usePalette } from '../theme';
+import { formatTimeDisplay } from '../domain/dates';
 import type { ReminderItem } from '../domain/types';
 
 export function AppScreen({ children, scroll = true }: { children: React.ReactNode; scroll?: boolean }) {
   const colors = usePalette();
+  const insets = useSafeAreaInsets();
+  const bottomPadding = styles.screenContent.paddingBottom + insets.bottom;
   return <SafeAreaView edges={['top', 'left', 'right']} style={{ flex: 1, backgroundColor: colors.background }}>
-    {scroll ? <ScrollView contentContainerStyle={styles.screenContent} keyboardShouldPersistTaps="handled">{children}</ScrollView> : <View style={styles.screenContent}>{children}</View>}
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+      {scroll ? <ScrollView contentContainerStyle={[styles.screenContent, { paddingBottom: bottomPadding }]} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
+        {children}
+      </ScrollView> : <View style={[styles.screenContent, { paddingBottom: bottomPadding }]}>{children}</View>}
+    </KeyboardAvoidingView>
   </SafeAreaView>;
 }
 
@@ -65,7 +72,7 @@ export function EmptyState({ title, body, action }: { title: string; body: strin
   return <Card style={styles.empty}><View style={[styles.emptyIcon, { backgroundColor: colors.primarySoft }]}><Ionicons name="leaf-outline" size={23} color={colors.primary} /></View><Text style={[styles.emptyTitle, { color: colors.text }]}>{title}</Text><Text style={[styles.emptyBody, { color: colors.muted }]}>{body}</Text>{action}</Card>;
 }
 
-export function ReminderRow({ item, completed = false, overdue = false, onToggle, onOpen }: {
+export const ReminderRow = React.memo(function ReminderRow({ item, completed = false, overdue = false, onToggle, onOpen }: {
   item: ReminderItem; completed?: boolean; overdue?: boolean; onToggle: () => void; onOpen: () => void;
 }) {
   const colors = usePalette();
@@ -75,15 +82,24 @@ export function ReminderRow({ item, completed = false, overdue = false, onToggle
       {completed ? <Ionicons name="checkmark" size={17} color="#FFFFFF" /> : null}
     </Pressable>
     <Pressable onPress={onOpen} style={{ flex: 1, minHeight: 58, justifyContent: 'center' }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}><Text numberOfLines={1} style={[styles.reminderTitle, { color: completed ? colors.muted : colors.text, textDecorationLine: completed ? 'line-through' : 'none' }]}>{item.title}</Text>{overdue && !completed ? <Text style={[styles.overdueTag, { color: colors.danger, backgroundColor: colors.dangerSoft }]}>OVERDUE</Text> : null}</View>
-      <Text style={[styles.reminderMeta, { color: colors.muted }]} numberOfLines={1}>{kindLabel} · {item.reminderTimes.join(' · ')}{item.dueDate ? ` · due ${item.dueDate}` : ''}</Text>
+      <View style={{ flexDirection: 'row', gap: 6 }}><Text numberOfLines={2} style={[styles.reminderTitle, { color: completed ? colors.muted : colors.text, textDecorationLine: completed ? 'line-through' : 'none' }]}>{item.title}</Text>{overdue && !completed ? <View style={{ borderRadius: 5, alignSelf: 'flex-start' }}><Text style={[styles.overdueTag, { color: colors.danger, backgroundColor: colors.dangerSoft }]}>OVERDUE</Text></View> : null}</View>
+      <Text style={[styles.reminderMeta, { color: colors.muted }]}>{kindLabel}{item.reminderTimes.length ? ` · ${item.reminderTimes.map(formatTimeDisplay).join(' · ')}` : ''}{item.dueDate ? ` · due ${item.dueDate}` : ''}</Text>
     </Pressable>
     <Pressable accessibilityRole="button" accessibilityLabel={`Edit ${item.title}`} onPress={onOpen} hitSlop={8} style={{ padding: 8 }}><Ionicons name="chevron-forward" size={19} color={colors.muted} /></Pressable>
   </View>;
-}
+}, (previous, next) => {
+  const previousItem = previous.item;
+  const nextItem = next.item;
+  const sameTimes = previousItem.reminderTimes.length === nextItem.reminderTimes.length &&
+    previousItem.reminderTimes.every((time, index) => time === nextItem.reminderTimes[index]);
+  // Handler closures are safe to retain while the row's visible/completion state is unchanged.
+  return previous.completed === next.completed && previous.overdue === next.overdue &&
+    previousItem.id === nextItem.id && previousItem.title === nextItem.title && previousItem.kind === nextItem.kind &&
+    previousItem.dueDate === nextItem.dueDate && previousItem.archived === nextItem.archived && sameTimes;
+});
 
 const styles = StyleSheet.create({
-  screenContent: { paddingHorizontal: 20, paddingTop: 15, paddingBottom: 36, gap: 18 },
+  screenContent: { paddingHorizontal: 22, paddingTop: 15, paddingBottom: 36, gap: 18 },
   headingRow: { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 2 },
   pageTitle: { fontSize: 29, fontWeight: '800', letterSpacing: -0.5 },
   subtitle: { fontSize: 14, marginTop: 4, lineHeight: 20 },
@@ -106,6 +122,6 @@ const styles = StyleSheet.create({
   reminderRow: { flexDirection: 'row', alignItems: 'center', gap: 11, borderBottomWidth: StyleSheet.hairlineWidth, paddingVertical: 8 },
   check: { width: 25, height: 25, borderRadius: 9, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
   reminderTitle: { fontSize: 15, fontWeight: '700', flexShrink: 1 },
-  reminderMeta: { fontSize: 11, marginTop: 4 },
+  reminderMeta: { fontSize: 11, marginTop: 4, lineHeight: 16 },
   overdueTag: { fontSize: 9, fontWeight: '800', letterSpacing: 0.3, paddingHorizontal: 6, paddingVertical: 3, overflow: 'hidden', borderRadius: 5 },
 });
